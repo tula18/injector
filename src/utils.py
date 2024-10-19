@@ -24,11 +24,13 @@ def readfile(input_file, logger):
         data = f.read()
     return data
 
-def compute_checksum(file_path):
-    """Compute checksum of the file for integrity check."""
+def writefile(output_file, data, logger):
+    with open(output_file, 'wb') as f:
+        f.write(data)
+
+def compute_checksum(file_data):
+    """Compute checksum of the file data for integrity check."""
     import hashlib
     hash_func = hashlib.sha256()
-    with open(file_path, "rb") as f:
-        for chunk in iter(lambda: f.read(4096), b""):
-            hash_func.update(chunk)
+    hash_func.update(file_data)
     return hash_func.hexdigest()

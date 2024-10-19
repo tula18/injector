@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Metadata Information</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>Image Metadata Information</h1>
+        
+        {% if info %}
+            <table class="result-table">
+                <tr>
+                    <th>Original Filename</th>
+                    <td>{{ info.original_filename }}</td>
+                </tr>
+                <tr>
+                    <th>File Size</th>
+                    <td>{{ info.file_size }} bytes</td>
+                </tr>
+                <tr>
+                    <th>Checksum (Original Hash)</th>
+                    <td>{{ info.original_hash }}</td>
+                </tr>
+            </table>
+        {% else %}
+            <p>No metadata found or unable to retrieve metadata.</p>
+        {% endif %}
+
+        <a href="/" class="back-link">Back to Home</a>
+    </div>
+
+    <footer>&copy; 2024 Secure Steganography</footer>
+</body>
+</html>

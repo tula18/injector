@@ -1,5 +1,7 @@
 import os
+import sys
 from colorama import Fore, Style
+from cryptography.exceptions import InvalidTag
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
@@ -27,26 +29,27 @@ class Encryptor:
         return kdf.derive(self.password)
 
     def encrypt(self, data: bytes) -> bytes:
-        # print(f"encrypted salt: {self.salt}")
-        key = self._derive_key()
-        # print(f"encrypted key: {key}")
-        cipher = Cipher(algorithms.AES(key), modes.GCM(self.iv), backend=default_backend())
-        encryptor = cipher.encryptor()
-        ciphertext = encryptor.update(data) + encryptor.finalize()
-        return self.salt + self.iv + encryptor.tag + ciphertext
+        try:
+            key = self._derive_key()
+            cipher = Cipher(algorithms.AES(key), modes.GCM(self.iv), backend=default_backend())
+            encryptor = cipher.encryptor()
+            ciphertext = encryptor.update(data) + encryptor.finalize()
+            return self.salt + self.iv + encryptor.tag + ciphertext
+        except Exception as e:
+            self.logger.error(f"{Fore.RED}Error during encryption: {e}{Style.RESET_ALL}")
+            raise
 
     def decrypt(self, encrypted_data: bytes) -> bytes:
         self.salt = encrypted_data[:16]
-        # print(f"decrypted salt: {encrypted_data[:16]}")
         self.iv = encrypted_data[16:28]
         tag = encrypted_data[28:44]
         ciphertext = encrypted_data[44:]
         
         key = self._derive_key()
-        # print(f"decrypted key: {key}")
         cipher = Cipher(algorithms.AES(key), modes.GCM(self.iv, tag), backend=default_backend())
         decryptor = cipher.decryptor()
         return decryptor.update(ciphertext) + decryptor.finalize()
+        
 
 # Usage example
 if __name__ == "__main__":

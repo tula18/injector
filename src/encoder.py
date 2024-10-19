@@ -1,15 +1,16 @@
 import os
+import zlib
 from colorama import Fore, Style
-from encryption import Encryptor
-from metadata import Metadata
-from utils import readfile, compute_checksum
+from src.encryption import Encryptor
+from src.metadata import Metadata
+from src.utils import readfile, compute_checksum
 from stegano import lsb
 
 class Encoder:
-    def __init__(self, input_file, image_file, password, security_levels, logger):
+    def __init__(self, input_file, image_file, output_image, password, security_levels, logger):
         self.input_file = input_file
         self.image_file = image_file
-        self.output_image = f"encoded_{image_file}"
+        self.output_image = output_image or f"encoded_{image_file}"
         self.password = password
         self.security_levels = security_levels
         self.logger = logger
@@ -25,7 +26,7 @@ class Encoder:
         print(len(file_data))
         
         # Compute file checksum
-        checksum = compute_checksum(self.input_file)
+        checksum = compute_checksum(file_data)
         
         # Initialize encryption handler
         encryption = Encryptor(self.password, self.logger)
@@ -49,6 +50,14 @@ class Encoder:
         
         metadata.print_metadata()
         
+        print(len(encrypted_metadata))
+        
+        # Compress the encrypted metadata to reduce size
+        # compressed_metadata = zlib.compress(encrypted_metadata, level=9)
+        print(len(encrypted_metadata))
+        print(encrypted_metadata.hex()[:100])
+        print(type(encrypted_metadata))
+        
         # Embed encrypted metadata and data into the image
         self.embed_in_image(encrypted_metadata)
         
@@ -60,6 +69,8 @@ class Encoder:
         try:
             # Convert the encrypted metadata (bytes) into a string for hiding in the image
             metadata_str = encrypted_metadata.decode('latin1')
+            
+            test_str = "secret message"
 
             # Use LSB steganography to hide encrypted metadata
             encoded_image = lsb.hide(self.image_file, metadata_str)
