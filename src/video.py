@@ -22,6 +22,10 @@ def _get_video_fps(video_path):
          '-of', 'default=noprint_wrappers=1:nokey=1', video_path],
         capture_output=True, text=True
     )
+    if result.returncode != 0:
+        raise RuntimeError(
+            f'ffprobe failed for {video_path!r}: {result.stderr.strip()}'
+        )
     fps = result.stdout.strip()
     return fps if fps else '30'
 
@@ -61,6 +65,10 @@ def hide_in_video(video_path, message, output_path):
         # 3. Reconstruct the video from the modified frame sequence.
         #    libx264rgb with CRF 0 gives truly lossless H.264 in RGB,
         #    so every pixel survives the round-trip unchanged.
+        #    'ultrafast' is used because lossless CRF 0 already produces
+        #    the same output quality regardless of preset; a slower preset
+        #    only reduces file size via better compression, which is not
+        #    required here.
         #    The audio stream (if any) is copied without re-encoding.
         _run_ffmpeg(
             ['-framerate', fps,

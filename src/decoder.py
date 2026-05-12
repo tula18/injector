@@ -1,5 +1,5 @@
 import base64
-from src.utils import writefile
+from src.utils import writefile, is_video_file
 from colorama import Fore, Style
 from stegano import lsb
 from src.metadata import Metadata
@@ -63,7 +63,7 @@ class Decoder:
     def extract_from_image(self, image_file):
         """Extract hidden compressed metadata from the image (or video) using steganography."""
         try:
-            if image_file.lower().endswith('.mp4'):
+            if is_video_file(image_file):
                 from src.video import reveal_from_video
                 hidden_data = reveal_from_video(image_file)
             else:

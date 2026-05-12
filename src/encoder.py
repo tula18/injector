@@ -3,7 +3,7 @@ import zlib
 from colorama import Fore, Style
 from src.encryption import Encryptor
 from src.metadata import Metadata
-from src.utils import readfile, compute_checksum
+from src.utils import readfile, compute_checksum, is_video_file
 from stegano import lsb
 
 class Encoder:
@@ -70,7 +70,7 @@ class Encoder:
             # Convert the encrypted metadata (bytes) into a string for hiding
             metadata_str = encrypted_metadata.decode('latin1')
 
-            if self.image_file.lower().endswith('.mp4'):
+            if is_video_file(self.image_file):
                 from src.video import hide_in_video
                 hide_in_video(self.image_file, metadata_str, self.output_image)
             else:

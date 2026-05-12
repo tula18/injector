@@ -34,3 +34,7 @@ def compute_checksum(file_data):
     hash_func = hashlib.sha256()
     hash_func.update(file_data)
     return hash_func.hexdigest()
+
+def is_video_file(path):
+    """Return True if *path* has a video file extension (currently mp4)."""
+    return path.lower().endswith('.mp4')
