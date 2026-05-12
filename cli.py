@@ -1,4 +1,5 @@
 import argparse
+import os
 from colorama import Fore, Style, init
 from src.encoder import Encoder
 from src.decoder import Decoder
@@ -62,7 +63,9 @@ def main():
     logger = setup_logger(verbose=args.verbose)
 
     if args.command == 'encode':
-        encoder = Encoder(args.input_file, args.image_file, "tst/output.png", args.password, args.security_levels, logger)
+        ext = os.path.splitext(args.image_file)[1]
+        output_file = f"tst/output{ext}"
+        encoder = Encoder(args.input_file, args.image_file, output_file, args.password, args.security_levels, logger)
         encoder.encrypt_and_embed()
     elif args.command == 'decode':
         decoder = Decoder(args.image_file, args.password, args.security_levels, logger)

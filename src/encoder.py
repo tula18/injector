@@ -65,17 +65,19 @@ class Encoder:
 
 
     def embed_in_image(self, encrypted_metadata):
-        """Embed the encrypted metadata into the image using steganography."""
+        """Embed the encrypted metadata into the image (or video) using steganography."""
         try:
-            # Convert the encrypted metadata (bytes) into a string for hiding in the image
+            # Convert the encrypted metadata (bytes) into a string for hiding
             metadata_str = encrypted_metadata.decode('latin1')
-            
-            test_str = "secret message"
 
-            # Use LSB steganography to hide encrypted metadata
-            encoded_image = lsb.hide(self.image_file, metadata_str)
-            encoded_image.save(self.output_image)
+            if self.image_file.lower().endswith('.mp4'):
+                from src.video import hide_in_video
+                hide_in_video(self.image_file, metadata_str, self.output_image)
+            else:
+                # Use LSB steganography to hide encrypted metadata in an image
+                encoded_image = lsb.hide(self.image_file, metadata_str)
+                encoded_image.save(self.output_image)
 
-            self.logger.info(f"Encrypted metadata embedded into image {self.output_image}.")
+            self.logger.info(f"Encrypted metadata embedded into {self.output_image}.")
         except Exception as e:
             self.logger.error(f"Error embedding data into image: {str(e)}")

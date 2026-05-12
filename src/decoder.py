@@ -61,11 +61,16 @@ class Decoder:
             self.logger.error(f"Error during decoding: {str(e)}")
         
     def extract_from_image(self, image_file):
-        """Extract hidden compressed metadata from the image using steganography."""
+        """Extract hidden compressed metadata from the image (or video) using steganography."""
         try:
-            hidden_data = lsb.reveal(image_file)
+            if image_file.lower().endswith('.mp4'):
+                from src.video import reveal_from_video
+                hidden_data = reveal_from_video(image_file)
+            else:
+                hidden_data = lsb.reveal(image_file)
+
             if hidden_data:
-                self.logger.info(f"Compressed metadata extracted from image {image_file}.")
+                self.logger.info(f"Compressed metadata extracted from {image_file}.")
                 return hidden_data
             else:
                 raise ValueError("No hidden data found in the image.")
