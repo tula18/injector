@@ -181,13 +181,17 @@ class QRVideoDecoder:
         self.logger = logger
         self.out_dir = out_dir
 
-    @staticmethod
-    def _make_detector():
+    def _make_detector(self):
         """Prefer the Aruco-based QR detector: it is dramatically more reliable at
-        locating QR codes than the classic detector. Fall back to the classic one on
-        older OpenCV builds that lack it."""
+        locating QR codes than the classic detector (which fails on dense QR codes even
+        after upscaling). Fall back to the classic one on older OpenCV builds that lack
+        it, but warn loudly because decoding will likely be incomplete."""
         if hasattr(cv2, "QRCodeDetectorAruco"):
             return cv2.QRCodeDetectorAruco()
+        self.logger.warning(
+            f"{Fore.RED}cv2.QRCodeDetectorAruco is unavailable (OpenCV "
+            f"{cv2.__version__} < 4.7). QR decoding will be UNRELIABLE and may miss many "
+            f"codes. Upgrade with: pip install --upgrade opencv-python{Style.RESET_ALL}")
         return cv2.QRCodeDetector()
 
     def _decode_frame(self, detector, frame):

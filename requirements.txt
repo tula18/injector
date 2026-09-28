@@ -3,5 +3,5 @@ stegano
 cryptography
 colorama
 qrcode[pil]
-opencv-python
+opencv-python>=4.7  # 4.7+ ships cv2.QRCodeDetectorAruco, required for reliable QR decoding
 numpy
