@@ -2,3 +2,6 @@ Flask
 stegano
 cryptography
 colorama
+qrcode[pil]
+opencv-python
+numpy

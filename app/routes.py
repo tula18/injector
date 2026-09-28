@@ -1,17 +1,19 @@
 import os
 import shutil
+import tempfile
 from flask import Blueprint, render_template, request, redirect, url_for, send_file, flash
 from werkzeug.utils import secure_filename
 from src.encoder import Encoder
 from src.decoder import Decoder
 from src.encryption import Encryptor
 from src.metadata import Metadata
+from src.qr_video import QRVideoEncoder, QRVideoDecoder
 from src.utils import setup_logger
 
 main = Blueprint('main', __name__)
 
 UPLOAD_FOLDER = 'app/uploads'
-ALLOWED_EXTENSIONS = {'png', 'txt', 'jpeg', 'jpg'}
+ALLOWED_EXTENSIONS = {'png', 'txt', 'jpeg', 'jpg', 'mp4'}
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
@@ -90,6 +92,82 @@ def decode():
             logger.error(f"Encoding failed: {e}")
             return f"Error during encoding: {str(e)}", 500
         
+@main.route('/encode-video', methods=['POST'])
+def encode_video():
+    if 'file' not in request.files:
+        return "Error: file is required", 400
+
+    file = request.files['file']
+    password = request.form.get('password')
+
+    if not password:
+        return "Error: Password is required", 400
+
+    output_format = request.form.get('format', 'mp4').lower()
+    if output_format not in ('mp4', 'zip'):
+        output_format = 'mp4'
+
+    if file:
+        file_path = os.path.join(UPLOAD_FOLDER, secure_filename(file.filename))
+        output_filename = secure_filename(f'{file.filename}.{output_format}')
+        output_path = os.path.join(UPLOAD_FOLDER, output_filename)
+
+        file.save(file_path)
+
+        try:
+            logger = setup_logger(verbose=True)
+            encoder = QRVideoEncoder(file_path, output_path, password, 5, logger,
+                                     output_format=output_format)
+            encoder.build()
+
+            # send_file resolves relative paths against app.root_path, so pass an absolute one.
+            return send_file(os.path.abspath(output_path), as_attachment=True)
+        except Exception as e:
+            logger.error(f"QR encoding failed: {e}")
+            return f"Error during encoding: {str(e)}", 500
+
+    return "Error: Invalid file", 400
+
+
+@main.route('/decode-video', methods=['POST'])
+def decode_video():
+    password = request.form.get('password')
+    if not password:
+        return "Error: Password is required", 400
+
+    # Two decode sources: a single MP4 video, or a set of QR PNG images (an unzipped folder).
+    images = [img for img in request.files.getlist('images') if img and img.filename]
+    video = request.files.get('video')
+
+    logger = setup_logger(verbose=True)
+    source_path = None
+    try:
+        if images:
+            # Save the uploaded PNGs into a fresh folder and decode from it.
+            source_path = tempfile.mkdtemp(prefix="qr_decode_", dir=UPLOAD_FOLDER)
+            for img in images:
+                if allowed_file(img.filename):
+                    img.save(os.path.join(source_path, secure_filename(img.filename)))
+        elif video and video.filename and allowed_file(video.filename):
+            source_path = os.path.join(UPLOAD_FOLDER, secure_filename(video.filename))
+            video.save(source_path)
+        else:
+            return "Error: provide an MP4 video or a set of QR PNG images", 400
+
+        decoder = QRVideoDecoder(source_path, password, 5, logger, out_dir=UPLOAD_FOLDER)
+        info, data = decoder.extract_and_decrypt()
+
+        output_path = os.path.join(UPLOAD_FOLDER, f"output_{info.get('original_filename')}")
+        # send_file resolves relative paths against app.root_path, so pass an absolute one.
+        return send_file(os.path.abspath(output_path), as_attachment=True)
+    except Exception as e:
+        logger.error(f"QR decoding failed: {e}")
+        return f"Error during decoding: {str(e)}", 500
+    finally:
+        if source_path and os.path.isdir(source_path):
+            shutil.rmtree(source_path, ignore_errors=True)
+
+
 @main.route('/info', methods=['POST'])
 def info():
     if 'image' not in request.files:

@@ -1,9 +1,11 @@
 import argparse
+import os
 from colorama import Fore, Style, init
 from src.encoder import Encoder
 from src.decoder import Decoder
 from src.encryption import Encryptor
 from src.metadata import Metadata
+from src.qr_video import QRVideoEncoder, QRVideoDecoder
 from src.utils import setup_logger
 
 # Initialize colorama
@@ -45,6 +47,22 @@ def main():
     decode_parser.add_argument('--password', required=True, type=str, help=f"{Fore.GREEN}Password for decrypting the data.{Style.RESET_ALL}")
     decode_parser.add_argument('--security-levels', type=int, default=5, help=f"{Fore.GREEN}Number of encryption levels (default: 5).{Style.RESET_ALL}")
 
+    # Encode-video command (QR-code slideshow MP4)
+    encode_video_parser = subparsers.add_parser('encode-video', help=f"{Fore.CYAN}Encode a file into an MP4 slideshow of QR codes.{Style.RESET_ALL}")
+    encode_video_parser.add_argument('input_file', type=str, help=f"{Fore.GREEN}The file to be encoded into the QR-code video.{Style.RESET_ALL}")
+    encode_video_parser.add_argument('output_video', type=str, help=f"{Fore.GREEN}The output MP4 file to create.{Style.RESET_ALL}")
+    encode_video_parser.add_argument('--password', required=True, type=str, help=f"{Fore.GREEN}Password for encrypting the data.{Style.RESET_ALL}")
+    encode_video_parser.add_argument('--security-levels', type=int, default=5, help=f"{Fore.GREEN}Number of encryption levels (default: 5).{Style.RESET_ALL}")
+    encode_video_parser.add_argument('--fps', type=int, default=5, help=f"{Fore.GREEN}Frames per second of the output video (default: 5).{Style.RESET_ALL}")
+    encode_video_parser.add_argument('--frames-per-qr', type=int, default=1, help=f"{Fore.GREEN}How many frames each QR code is held for (default: 1).{Style.RESET_ALL}")
+    encode_video_parser.add_argument('--format', choices=['mp4', 'zip'], default='mp4', help=f"{Fore.GREEN}Output format: 'mp4' video or 'zip' of QR PNGs (default: mp4).{Style.RESET_ALL}")
+
+    # Decode-video command
+    decode_video_parser = subparsers.add_parser('decode-video', help=f"{Fore.CYAN}Decode and extract the hidden file from a QR-code MP4 or a folder of QR PNGs.{Style.RESET_ALL}")
+    decode_video_parser.add_argument('video_file', type=str, help=f"{Fore.GREEN}The MP4 file, or a folder of QR PNG images, to extract the encoded data from.{Style.RESET_ALL}")
+    decode_video_parser.add_argument('--password', required=True, type=str, help=f"{Fore.GREEN}Password for decrypting the data.{Style.RESET_ALL}")
+    decode_video_parser.add_argument('--security-levels', type=int, default=5, help=f"{Fore.GREEN}Number of encryption levels (default: 5).{Style.RESET_ALL}")
+
     # Info command
     info_parser = subparsers.add_parser('info', help=f"{Fore.CYAN}Retrieve metadata info from an encoded image.{Style.RESET_ALL}")
     info_parser.add_argument('image_file', type=str, help=f"{Fore.GREEN}The image file containing the encoded metadata.{Style.RESET_ALL}")
@@ -66,6 +84,19 @@ def main():
         encoder.encrypt_and_embed()
     elif args.command == 'decode':
         decoder = Decoder(args.image_file, args.password, args.security_levels, logger)
+        decoder.extract_and_decrypt()
+    elif args.command == 'encode-video':
+        # Normalize the output extension to match the chosen format.
+        output_path = args.output_video
+        root, ext = os.path.splitext(output_path)
+        if ext.lower() != f'.{args.format}':
+            output_path = f'{root}.{args.format}'
+        encoder = QRVideoEncoder(args.input_file, output_path, args.password,
+                                 args.security_levels, logger, fps=args.fps,
+                                 frames_per_qr=args.frames_per_qr, output_format=args.format)
+        encoder.build()
+    elif args.command == 'decode-video':
+        decoder = QRVideoDecoder(args.video_file, args.password, args.security_levels, logger)
         decoder.extract_and_decrypt()
     elif args.command == 'info':
         logger.info(f"{Fore.CYAN}Retrieving metadata information{Style.RESET_ALL}")

@@ -46,6 +46,37 @@
             <button type="submit">Decode</button>
         </form>
 
+        <!-- QR Encoding Section -->
+        <h2>Encode File into QR Codes</h2>
+        <form action="/encode-video" method="POST" enctype="multipart/form-data">
+            <label for="file">File to encode:</label>
+            <input type="file" name="file" required>
+
+            <label>Output format:</label>
+            <label><input type="radio" name="format" value="mp4" checked> MP4 video</label>
+            <label><input type="radio" name="format" value="zip"> ZIP of QR PNGs</label>
+
+            <label for="password">Password:</label>
+            <input type="password" name="password" required>
+
+            <button type="submit">Encode</button>
+        </form>
+
+        <!-- QR Decoding Section -->
+        <h2>Decode File from QR Codes</h2>
+        <form action="/decode-video" method="POST" enctype="multipart/form-data">
+            <label for="video">Encoded Video (mp4):</label>
+            <input type="file" name="video" accept="video/mp4">
+
+            <label for="images">…or select all QR PNGs from an unzipped folder:</label>
+            <input type="file" name="images" accept="image/png" multiple webkitdirectory>
+
+            <label for="password">Password:</label>
+            <input type="password" name="password" required>
+
+            <button type="submit">Decode</button>
+        </form>
+
         <!-- Metadata Info Section -->
         <h2>Retrieve Metadata Information from Image</h2>
         <form action="/info" method="POST" enctype="multipart/form-data">

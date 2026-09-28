@@ -1,2 +1,7 @@
 /.vscode
 /venv
+/app/uploads
+*.pyc
+test.txt
+large_carrier2.jpg
+large_carrier2.png
